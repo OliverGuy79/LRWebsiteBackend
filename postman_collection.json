@@ -1,0 +1,357 @@
+{
+  "info": {
+    "_postman_id": "lr-website-backend-api",
+    "name": "Église LaRencontre API",
+    "description": "Backend API for the LaRencontre church website.\n\nBase URL: http://localhost:8000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Health check endpoint to verify the API is running."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "List Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/articles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "articles"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "published",
+                  "description": "Filter by status (e.g., 'published')",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Limit number of results",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all articles (metadata only, no content). Use the single article endpoint to get full content."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Article by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/articles/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "articles", ":slug"],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "example-article",
+                  "description": "Article slug"
+                }
+              ]
+            },
+            "description": "Get a single article by slug, including full HTML content from Google Doc."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Limit number of results",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all published events."
+          },
+          "response": []
+        },
+        {
+          "name": "List Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "upcoming"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Number of events to return",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List upcoming events (starting from today)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/:event_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", ":event_id"],
+              "variable": [
+                {
+                  "key": "event_id",
+                  "value": "1",
+                  "description": "Event ID"
+                }
+              ]
+            },
+            "description": "Get a single event by ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Boutique",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/boutique",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "boutique"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category",
+                  "disabled": true
+                },
+                {
+                  "key": "in_stock",
+                  "value": "true",
+                  "description": "Filter by stock status",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all active products."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/boutique/:product_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "boutique", ":product_id"],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "1",
+                  "description": "Product ID"
+                }
+              ]
+            },
+            "description": "Get a single product by ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "List Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services"],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "fr",
+                  "description": "Filter by language (fr, en)",
+                  "disabled": true
+                },
+                {
+                  "key": "service_type",
+                  "value": "",
+                  "description": "Filter by service type",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all active church services."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pastoral Team",
+      "item": [
+        {
+          "name": "List Team Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pastoral-team",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pastoral-team"],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "",
+                  "description": "Filter by role",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all active pastoral team members."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Home Groups",
+      "item": [
+        {
+          "name": "List Home Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/home-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "home-groups"],
+              "query": [
+                {
+                  "key": "day",
+                  "value": "",
+                  "description": "Filter by day of week",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all active home groups."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vision",
+      "item": [
+        {
+          "name": "List Vision Sections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vision",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vision"]
+            },
+            "description": "List all active vision/mission sections."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Church Info",
+      "item": [
+        {
+          "name": "Get Church Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/church-info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "church-info"]
+            },
+            "description": "Get church information. Returns contact details, social media links, and general info."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

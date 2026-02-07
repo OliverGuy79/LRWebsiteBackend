@@ -5,6 +5,8 @@ from fastapi import APIRouter, Query
 from app.models.home_groups import HomeGroup, HomeGroupListResponse
 from app.services import sheets_service
 
+import logging
+
 
 router = APIRouter()
 
@@ -21,11 +23,14 @@ async def list_home_groups(
     """
     data = await sheets_service.get_home_groups()
     
-    # Filter by frequency if provided
-    if frequency:
-        data = [g for g in data if frequency.lower() in g.get("Fréquence", "").lower()]
+    # Filter by day if provided
+    if day:
+        data = [g for g in data if g.get("day_of_week", "").lower() == day.lower()]
     
-    # Parse using aliases (French column names) - output will use English field names
-    groups = [HomeGroup.model_validate(group) for group in data]
+    # Filter by category if provided
+    if category:
+        data = [g for g in data if g.get("category", "").lower() == category.lower()]
+
     
+    groups = [HomeGroup(**group) for group in data]
     return HomeGroupListResponse(home_groups=groups, total=len(groups))

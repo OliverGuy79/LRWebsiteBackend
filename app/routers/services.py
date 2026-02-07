@@ -6,6 +6,7 @@ from app.config import get_settings
 from app.models.services import Service, ServiceListResponse
 from app.services import sheets_service
 
+import logging
 
 router = APIRouter()
 settings = get_settings()
@@ -26,8 +27,8 @@ async def list_services(
     """
     data = await sheets_service.get_services()
     
-    # Filter to only active services (sheet uses 'is_active' column)
-    data = [s for s in data if s.get("is_active", "").upper() == "TRUE"]
+    # Filter to only active services
+    data = [m for m in data if m.get("is_active", "").upper() == "TRUE"]
     
     # Filter by language if provided
     if lang:
