@@ -58,7 +58,7 @@ async def list_upcoming_events(
     today = date.today()
     
     # Filter to only published events
-    data = [e for e in data if e.get("is_published", "").upper() == "TRUE"]
+    data = [e for e in data if e.get("status", "").lower() == "active"]
     
     # Filter to only future events
     upcoming = []
