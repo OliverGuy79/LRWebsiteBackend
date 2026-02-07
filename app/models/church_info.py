@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class ChurchInfo(BaseModel):
     """Church contact and general information."""
+    # Matches actual sheet columns exactly
     id: str | None = None
     church_name: str
     slogan: str | None = None
@@ -19,7 +20,6 @@ class ChurchInfo(BaseModel):
     email: str | None = None
     facebook: str | None = None
     instagram: str | None = None
-    twitter: str | None = None
     youtube: str | None = None
-    opening_hours: str | None = None
-    logo_url: str | None = None
+    twitter: str | None = None
+    logo: str | None = None  # Was logo_url, now matches sheet

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class TeamMember(BaseModel):
-    """Pastoral team member."""
+    """Pastoral team member - matches actual sheet columns."""
     id: str
     first_name: str
     last_name: str
@@ -19,7 +19,7 @@ class TeamMember(BaseModel):
     linkedin: str | None = None
     is_senior_pastor: str | None = None
     display_order: str | None = None
-    status: str | None = None
+    is_active: str | None = None  # Was status, now is_active
     created_at: str | None = None
     updated_at: str | None = None
 

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Event(BaseModel):
-    """Church event."""
+    """Church event - matches actual sheet columns."""
     id: str
     title: str
     description: str | None = None
@@ -18,7 +18,9 @@ class Event(BaseModel):
     category: str | None = None
     registration_required: str | None = None
     registration_link: str | None = None
-    is_published: str | None = None
+    is_recurring: str | None = None  # New field from sheet
+    recurrence_pattern: str | None = None  # New field from sheet
+    status: str | None = None  # Was is_published, now status
     created_at: str | None = None
     updated_at: str | None = None
 

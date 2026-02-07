@@ -26,8 +26,8 @@ async def list_services(
     """
     data = await sheets_service.get_services()
     
-    # Filter to only active services
-    data = [s for s in data if s.get("status", "").lower() == "active"]
+    # Filter to only active services (sheet uses 'is_active' column)
+    data = [s for s in data if s.get("is_active", "").upper() == "TRUE"]
     
     # Filter by language if provided
     if lang:

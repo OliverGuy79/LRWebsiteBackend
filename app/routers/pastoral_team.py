@@ -16,8 +16,8 @@ async def list_team_members(
     """List all active pastoral team members."""
     data = await sheets_service.get_pastoral_team()
     
-    # Filter to only active members
-    data = [m for m in data if m.get("status", "").lower() == "active"]
+    # Filter to only active members (sheet uses 'is_active' column)
+    data = [m for m in data if m.get("is_active", "").upper() == "TRUE"]
     
     # Filter by role if provided
     if role:

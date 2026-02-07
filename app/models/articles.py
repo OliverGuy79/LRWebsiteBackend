@@ -1,7 +1,6 @@
 """Pydantic models for Articles."""
 
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, Field
 
 
 class ArticleBase(BaseModel):
@@ -9,15 +8,17 @@ class ArticleBase(BaseModel):
     id: str
     title: str
     slug: str
+    content: str | None = None  # Content from sheet (not used if using Google Docs)
     excerpt: str | None = None
     author: str | None = None
     category: str | None = None
     tags: str | None = None
-    feature_image: str | None = None
+    featured_image: str | None = None
     status: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
     published_at: str | None = None
+    link: str | None = None  # Google Doc link for content
 
 
 class ArticleFull(ArticleBase):

@@ -2,7 +2,7 @@
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-
+import logging
 
 class Settings(BaseSettings):
     """Application settings loaded from environment."""
@@ -41,6 +41,7 @@ class Settings(BaseSettings):
         url = f"{self.sheets_base_url}/{sheet_id}/gviz/tq?tqx=out:csv"
         if tab_name:
             url += f"&sheet={tab_name}"
+        logging.error(f"Generated URL: {url}")
         return url
     
     @staticmethod

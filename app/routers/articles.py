@@ -54,8 +54,8 @@ async def get_article(slug: str):
     if not article_data:
         raise HTTPException(status_code=404, detail="Article not found")
     
-    # Fetch content from Google Doc
-    doc_url = article_data.get("content_doc_url") or article_data.get("content")
+    # Fetch content from Google Doc - use 'link' column for doc URL
+    doc_url = article_data.get("link") or article_data.get("content")
     content_html = await docs_service.get_article_content(doc_url)
     
     return ArticleFull(

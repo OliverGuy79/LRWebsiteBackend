@@ -3,7 +3,7 @@
 import csv
 import io
 from typing import Any
-
+import logging
 import httpx
 
 from app.config import get_settings
@@ -17,7 +17,8 @@ cache = get_cache(settings.cache_ttl_seconds)
 async def fetch_sheet_data(
     sheet_id: str,
     tab_name: str | None = None,
-    use_cache: bool = True
+    use_cache: bool = True,
+    gid: str | None = None
 ) -> list[dict[str, Any]]:
     """
     Fetch data from a public Google Sheet as a list of dictionaries.
@@ -52,9 +53,9 @@ async def fetch_sheet_data(
             
         # Parse CSV
         csv_text = response.text
+
         reader = csv.DictReader(io.StringIO(csv_text))
         data = list(reader)
-        
         # Cache the result
         cache.set(cache_key, data)
         
@@ -64,6 +65,7 @@ async def fetch_sheet_data(
         # Log the error but return empty list to allow the app to continue
         print(f"Warning: Could not fetch sheet {sheet_id}: {e}")
         return []
+
 
 
 async def get_articles(use_cache: bool = True) -> list[dict[str, Any]]:
@@ -92,8 +94,12 @@ async def get_events(use_cache: bool = True) -> list[dict[str, Any]]:
 
 
 async def get_home_groups(use_cache: bool = True) -> list[dict[str, Any]]:
-    """Fetch home groups from the home_groups sheet."""
-    return await fetch_sheet_data(settings.sheet_id_home_groups, use_cache=use_cache)
+    """Fetch home groups from the home_groups sheet (LR_WEBSITE tab)."""
+    return await fetch_sheet_data(
+        settings.sheet_id_home_groups, 
+        tab_name="LR_WEBSITE",
+        use_cache=use_cache
+    )
 
 
 async def get_pastoral_team(use_cache: bool = True) -> list[dict[str, Any]]:

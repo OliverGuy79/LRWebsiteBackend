@@ -25,11 +25,11 @@ async def list_events(
     category: str | None = Query(None, description="Filter by category"),
     limit: int | None = Query(None, description="Limit number of results"),
 ):
-    """List all published events."""
+    """List all active events."""
     data = await sheets_service.get_events()
     
-    # Filter to only published events
-    data = [e for e in data if e.get("is_published", "").upper() == "TRUE"]
+    # Filter to only active events (sheet uses 'status' column)
+    data = [e for e in data if e.get("status", "").lower() == "active"]
     
     # Filter by category if provided
     if category:
@@ -55,8 +55,8 @@ async def list_upcoming_events(
     
     today = date.today()
     
-    # Filter to only published events
-    data = [e for e in data if e.get("is_published", "").upper() == "TRUE"]
+    # Filter to only active events (sheet uses 'status' column)
+    data = [e for e in data if e.get("status", "").lower() == "active"]
     
     # Filter to only future events
     upcoming = []

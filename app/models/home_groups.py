@@ -1,27 +1,28 @@
 """Pydantic models for Home Groups."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HomeGroup(BaseModel):
-    """Small group / home group."""
-    id: str | None = None
-    name: str | None = None
-    leader: str | None = None
-    co_leader: str | None = None
-    location: str | None = None
-    address: str | None = None
-    day_of_week: str | None = None
-    time: str | None = None
-    description: str | None = None
-    category: str | None = None
-    max_capacity: str | None = None
-    contact_email: str | None = None
-    contact_phone: str | None = None
-    image: str | None = None
-    status: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    """
+    Small group / home group.
+    
+    Note: The sheet uses French column names. We use Field aliases
+    to map them to English model field names.
+    """
+    # Actual sheet columns (header row when filter is removed):
+    # HOME, Leader(s), Description de la home (2 phrases max), 
+    # Jour et Horaires, Fréquence, Date de la 1ere rencontre, Taille de teeshirt
+    id: int | None = Field(None, alias="id")
+    home: str | None = Field(None, alias="HOME")
+    leaders: str | None = Field(None, alias="Leader(s)")
+    description: str | None = Field(None, alias="Description de la home (2 phrases max)")
+    schedule: str | None = Field(None, alias="Jour et Horaires")
+    frequency: str | None = Field(None, alias="Fréquence")
+    first_meeting_date: str | None = Field(None, alias="Date de la 1ere rencontre")
+    tshirt_size: str | None = Field(None, alias="Taille de teeshirt")
+    
+    model_config = {"populate_by_name": True}
 
 
 class HomeGroupListResponse(BaseModel):
