@@ -5,8 +5,6 @@ from fastapi import APIRouter, Query
 from app.models.pastoral_team import TeamMember, TeamListResponse
 from app.services import sheets_service
 
-import logging
-
 
 router = APIRouter()
 
@@ -14,12 +12,18 @@ router = APIRouter()
 @router.get("", response_model=TeamListResponse)
 async def list_team_members(
     role: str | None = Query(None, description="Filter by role"),
+    preview: bool = Query(False, description="Include draft content for preview"),
 ):
-    """List all active pastoral team members."""
+    """List all published pastoral team members."""
     data = await sheets_service.get_pastoral_team()
     
-    # Filter to only active members
-    data = [m for m in data if m.get("is_active", "").upper() == "TRUE"]
+    # Filter by status
+    if preview:
+        # Show published and draft (not archived)
+        data = [m for m in data if m.get("status", "").lower() in ("published", "draft")]
+    else:
+        # Only show published
+        data = [m for m in data if m.get("status", "").lower() == "published"]
     
     # Filter by role if provided
     if role:

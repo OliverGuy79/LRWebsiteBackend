@@ -6,8 +6,6 @@ from fastapi import APIRouter, HTTPException, Query
 from app.models.events import Event, EventListResponse
 from app.services import sheets_service
 
-import logging
-
 
 router = APIRouter()
 
@@ -26,12 +24,18 @@ def parse_date(date_str: str | None) -> date | None:
 async def list_events(
     category: str | None = Query(None, description="Filter by category"),
     limit: int | None = Query(None, description="Limit number of results"),
+    preview: bool = Query(False, description="Include draft content for preview"),
 ):
     """List all published events."""
     data = await sheets_service.get_events()
     
-    # Filter to only published events
-    data = [e for e in data if e.get("status", "").lower() == "active"]
+    # Filter by status
+    if preview:
+        # Show published and draft (not archived)
+        data = [e for e in data if e.get("status", "").lower() in ("published", "draft")]
+    else:
+        # Only show published
+        data = [e for e in data if e.get("status", "").lower() == "published"]
     
     # Filter by category if provided
     if category:
@@ -51,14 +55,20 @@ async def list_events(
 @router.get("/upcoming", response_model=EventListResponse)
 async def list_upcoming_events(
     limit: int = Query(5, description="Number of events to return"),
+    preview: bool = Query(False, description="Include draft content for preview"),
 ):
     """List upcoming events (starting from today)."""
     data = await sheets_service.get_events()
     
     today = date.today()
     
-    # Filter to only published events
-    data = [e for e in data if e.get("status", "").lower() == "active"]
+    # Filter by status
+    if preview:
+        # Show published and draft (not archived)
+        data = [e for e in data if e.get("status", "").lower() in ("published", "draft")]
+    else:
+        # Only show published
+        data = [e for e in data if e.get("status", "").lower() == "published"]
     
     # Filter to only future events
     upcoming = []
@@ -78,13 +88,21 @@ async def list_upcoming_events(
 
 
 @router.get("/{event_id}", response_model=Event)
-async def get_event(event_id: str):
+async def get_event(
+    event_id: str,
+    preview: bool = Query(False, description="Allow viewing draft events"),
+):
     """Get a single event by ID."""
     data = await sheets_service.get_events()
     
     event_data = next((e for e in data if e.get("id") == event_id), None)
     
     if not event_data:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Check status - only allow published unless preview mode
+    status = event_data.get("status", "").lower()
+    if not preview and status != "published":
         raise HTTPException(status_code=404, detail="Event not found")
     
     return Event(**event_data)

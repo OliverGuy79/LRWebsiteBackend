@@ -12,14 +12,23 @@ router = APIRouter()
 @router.get("", response_model=HomeGroupListResponse)
 async def list_home_groups(
     frequency: str | None = Query(None, description="Filter by frequency (e.g., '1 fois par mois')"),
+    preview: bool = Query(False, description="Include draft content for preview"),
 ):
     """
-    List all home groups.
+    List all published home groups.
     
     Note: The sheet uses French column names which are mapped to English model fields.
     Response uses English field names (home, leaders, schedule, etc.)
     """
     data = await sheets_service.get_home_groups()
+    
+    # Filter by status if column exists
+    if preview:
+        # Show published and draft (not archived)
+        data = [g for g in data if g.get("status", "published").lower() in ("published", "draft", "")]
+    else:
+        # Only show published (or items without status for backward compatibility)
+        data = [g for g in data if g.get("status", "published").lower() in ("published", "")]
     
     # Filter by frequency if provided
     if frequency:

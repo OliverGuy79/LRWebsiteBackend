@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Service(BaseModel):
-    """Church service times - matches actual sheet columns."""
+    """Church service times."""
     id: str
     name: str
     description: str | None = None
@@ -18,7 +18,7 @@ class Service(BaseModel):
     has_childcare: str | None = None
     image: str | None = None
     display_order: str | None = None
-    is_active: str | None = None  # Was status, now is_active
+    status: str | None = None  # published, draft, archived (was is_active)
     created_at: str | None = None
     updated_at: str | None = None
 

@@ -6,7 +6,6 @@ from app.config import get_settings
 from app.models.services import Service, ServiceListResponse
 from app.services import sheets_service
 
-import logging
 
 router = APIRouter()
 settings = get_settings()
@@ -14,21 +13,24 @@ settings = get_settings()
 
 @router.get("", response_model=ServiceListResponse)
 async def list_services(
-    lang: str = Query(
-        default=None,
-        description="Filter by language (fr, en)",
-    ),
+    lang: str = Query(default=None, description="Filter by language (fr, en)"),
     service_type: str | None = Query(None, description="Filter by service type"),
+    preview: bool = Query(False, description="Include draft content for preview"),
 ):
     """
-    List all active church services.
+    List all published church services.
     
     The services sheet has a language column to filter by language.
     """
     data = await sheets_service.get_services()
     
-    # Filter to only active services
-    data = [m for m in data if m.get("is_active", "").upper() == "TRUE"]
+    # Filter by status
+    if preview:
+        # Show published and draft (not archived)
+        data = [s for s in data if s.get("status", "").lower() in ("published", "draft")]
+    else:
+        # Only show published
+        data = [s for s in data if s.get("status", "").lower() == "published"]
     
     # Filter by language if provided
     if lang:
