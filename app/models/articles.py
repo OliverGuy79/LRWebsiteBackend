@@ -13,7 +13,8 @@ class ArticleBase(BaseModel):
     author: str | None = None
     category: str | None = None
     tags: str | None = None
-    featured_image: str | None = None
+    image: str | None = None  # was featured_image
+    media: str | None = None  # link to attached media
     status: str | None = None
     created_at: str | None = None
     updated_at: str | None = None

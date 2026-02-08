@@ -3,15 +3,16 @@
 import csv
 import io
 from typing import Any
-import logging
 import httpx
 
 from app.config import get_settings
+from app.logging_config import get_logger
 from app.services.cache_service import get_cache
 
 
 settings = get_settings()
 cache = get_cache(settings.cache_ttl_seconds)
+logger = get_logger(__name__)
 
 
 async def fetch_sheet_data(
@@ -33,6 +34,7 @@ async def fetch_sheet_data(
         Returns empty list if sheet is not accessible.
     """
     if not sheet_id:
+        logger.warning("Empty sheet_id provided")
         return []
     
     cache_key = f"sheet:{sheet_id}:{tab_name or 'default'}"
@@ -41,10 +43,19 @@ async def fetch_sheet_data(
     if use_cache:
         cached = cache.get(cache_key)
         if cached is not None:
+            logger.debug(f"Cache hit for {cache_key}", extra={
+                "cache_key": cache_key,
+                "cached_rows": len(cached),
+            })
             return cached
     
     # Fetch from Google Sheets
     url = settings.get_sheet_csv_url(sheet_id, tab_name)
+    
+    logger.debug(f"Fetching sheet data", extra={
+        "sheet_id": sheet_id,
+        "tab_name": tab_name,
+    })
     
     try:
         async with httpx.AsyncClient() as client:
@@ -53,19 +64,27 @@ async def fetch_sheet_data(
             
         # Parse CSV
         csv_text = response.text
-
         reader = csv.DictReader(io.StringIO(csv_text))
         data = list(reader)
+        
+        logger.info(f"Fetched sheet data successfully", extra={
+            "sheet_id": sheet_id,
+            "tab_name": tab_name,
+            "rows": len(data),
+        })
+        
         # Cache the result
         cache.set(cache_key, data)
         
         return data
     
     except httpx.HTTPError as e:
-        # Log the error but return empty list to allow the app to continue
-        print(f"Warning: Could not fetch sheet {sheet_id}: {e}")
+        logger.error(f"Failed to fetch sheet data", extra={
+            "sheet_id": sheet_id,
+            "tab_name": tab_name,
+            "error": str(e),
+        })
         return []
-
 
 
 async def get_articles(use_cache: bool = True) -> list[dict[str, Any]]:

@@ -2,7 +2,7 @@
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-import logging
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment."""
@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
     
+    # Logging settings
+    log_level: str = "INFO"
+    log_json_format: bool = False  # Set to True for production
+    
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
@@ -41,7 +45,6 @@ class Settings(BaseSettings):
         url = f"{self.sheets_base_url}/{sheet_id}/gviz/tq?tqx=out:csv"
         if tab_name:
             url += f"&sheet={tab_name}"
-        logging.error(f"Generated URL: {url}")
         return url
     
     @staticmethod

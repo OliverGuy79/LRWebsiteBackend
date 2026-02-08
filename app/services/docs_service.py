@@ -5,11 +5,13 @@ import re
 import httpx
 
 from app.config import get_settings
+from app.logging_config import get_logger
 from app.services.cache_service import get_cache
 
 
 settings = get_settings()
 cache = get_cache(settings.cache_ttl_seconds)
+logger = get_logger(__name__)
 
 
 async def fetch_doc_html(doc_url: str, use_cache: bool = True) -> str | None:
@@ -26,6 +28,7 @@ async def fetch_doc_html(doc_url: str, use_cache: bool = True) -> str | None:
     # Extract doc ID from URL
     doc_id = settings.extract_doc_id(doc_url)
     if not doc_id:
+        logger.warning("Could not extract doc ID from URL", extra={"doc_url": doc_url})
         return None
     
     cache_key = f"doc:{doc_id}"
@@ -34,10 +37,13 @@ async def fetch_doc_html(doc_url: str, use_cache: bool = True) -> str | None:
     if use_cache:
         cached = cache.get(cache_key)
         if cached is not None:
+            logger.debug(f"Cache hit for doc {doc_id}", extra={"doc_id": doc_id})
             return cached
     
     # Fetch HTML from Google Docs
     export_url = settings.get_doc_html_url(doc_id)
+    
+    logger.debug(f"Fetching doc content", extra={"doc_id": doc_id})
     
     try:
         async with httpx.AsyncClient() as client:
@@ -49,12 +55,21 @@ async def fetch_doc_html(doc_url: str, use_cache: bool = True) -> str | None:
         # Clean up the HTML - extract body content and clean Google's styling
         html_content = clean_google_doc_html(html_content)
         
+        logger.info(f"Fetched doc content successfully", extra={
+            "doc_id": doc_id,
+            "content_length": len(html_content),
+        })
+        
         # Cache the result
         cache.set(cache_key, html_content)
         
         return html_content
         
-    except httpx.HTTPError:
+    except httpx.HTTPError as e:
+        logger.error(f"Failed to fetch doc content", extra={
+            "doc_id": doc_id,
+            "error": str(e),
+        })
         return None
 
 

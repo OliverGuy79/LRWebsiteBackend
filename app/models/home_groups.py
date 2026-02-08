@@ -22,6 +22,7 @@ class HomeGroup(BaseModel):
     frequency: str | None = Field(None, validation_alias="Fréquence")
     first_meeting_date: str | None = Field(None, validation_alias="Date de la 1ere rencontre")
     tshirt_size: str | None = Field(None, validation_alias="Taille de teeshirt")
+    image: str | None = Field(None, validation_alias="image")
     
     model_config = {"populate_by_name": True}
 
