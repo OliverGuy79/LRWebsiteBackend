@@ -5,6 +5,25 @@ from typing import Any
 from threading import Lock
 
 
+class NoOpCache:
+    """A no-op cache that doesn't store anything."""
+
+    def get(self, key: str) -> Any | None:
+        return None
+
+    def set(self, key: str, value: Any, ttl: int | None = None) -> None:
+        pass
+
+    def delete(self, key: str) -> bool:
+        return False
+
+    def clear(self) -> None:
+        pass
+
+    def cleanup_expired(self) -> int:
+        return 0
+
+
 class CacheEntry:
     """A single cache entry with value and expiration time."""
     
@@ -95,8 +114,11 @@ class CacheService:
 _cache: CacheService | None = None
 
 
-def get_cache(ttl: int = 600) -> CacheService:
+def get_cache(ttl: int = 600, enabled: bool = True) -> CacheService | NoOpCache:
     """Get or create the global cache instance."""
+    if not enabled:
+        return NoOpCache()
+
     global _cache
     if _cache is None:
         _cache = CacheService(default_ttl=ttl)
