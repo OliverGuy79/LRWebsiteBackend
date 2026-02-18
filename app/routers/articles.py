@@ -12,16 +12,17 @@ router = APIRouter()
 @router.get("", response_model=ArticleListResponse)
 async def list_articles(
     category: str | None = Query(None, description="Filter by category"),
+    tag: str | None = Query(None, description="Filter by tag"),
     limit: int | None = Query(None, description="Limit number of results"),
     preview: bool = Query(False, description="Include draft content for preview"),
 ):
     """
     List all published articles (metadata only, no content).
-    
+
     Use the single article endpoint to get full content.
     """
     data = await sheets_service.get_articles()
-    
+
     # Filter by status
     if preview:
         # Show published and draft (not archived)
@@ -29,18 +30,22 @@ async def list_articles(
     else:
         # Only show published
         data = [a for a in data if a.get("status", "").lower() == "published"]
-    
+
     # Filter by category if provided
     if category:
         data = [a for a in data if a.get("category", "").lower() == category.lower()]
-    
+
+    # Filter by tag if provided (tags are comma-separated in the sheet)
+    if tag:
+        data = [a for a in data if tag.lower() in [t.strip().lower() for t in (a.get("tags") or "").split(",")]]
+
     # Sort by published_at (newest first)
     data.sort(key=lambda x: x.get("published_at", ""), reverse=True)
-    
+
     # Limit results if specified
     if limit:
         data = data[:limit]
-    
+
     articles = [ArticleBase(**article) for article in data]
     return ArticleListResponse(articles=articles, total=len(articles))
 
