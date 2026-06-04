@@ -11,7 +11,7 @@ from app.services.cache_service import get_cache
 
 
 settings = get_settings()
-cache = get_cache(settings.cache_ttl_seconds)
+cache = get_cache(settings.cache_ttl_seconds, settings.cache_enabled)
 logger = get_logger(__name__)
 
 

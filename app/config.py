@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     sheet_id_vision: str = ""
     
     # Cache settings
+    cache_enabled: bool = True
     cache_ttl_seconds: int = 600  # 10 minutes
     
     # Language settings
