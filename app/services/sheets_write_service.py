@@ -1,7 +1,6 @@
 """Service for writing data to Google Sheets via the Google Sheets API v4."""
 
 import json
-import os
 from typing import Any
 
 import httpx
@@ -20,7 +19,7 @@ async def _get_access_token() -> str | None:
     The service account credentials are loaded from:
       - env var GOOGLE_SERVICE_ACCOUNT_JSON  (full JSON string)
     """
-    cred_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    cred_json = settings.google_service_account_json
     if not cred_json:
         logger.warning("GOOGLE_SERVICE_ACCOUNT_JSON not set — cannot write to Sheets")
         return None
@@ -62,18 +61,22 @@ async def _get_access_token() -> str | None:
     sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode()
     jwt_str = f"{signing_input}.{sig_b64}"
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "grant_type": "urn:ietf:params:oauth:grants:jwt-bearer",
-                "assertion": jwt_str,
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            timeout=10.0,
-        )
-        resp.raise_for_status()
-        return resp.json().get("access_token")
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                    "assertion": jwt_str,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            return resp.json().get("access_token")
+    except (httpx.HTTPError, KeyError, ValueError) as error:
+        logger.error(f"Failed to authenticate Google service account: {error}")
+        return None
 
 
 async def append_row(

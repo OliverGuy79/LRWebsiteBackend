@@ -1,7 +1,6 @@
 """Boutique API endpoints — including reservations."""
 
 from datetime import datetime, timezone
-import os
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -9,7 +8,8 @@ from app.models.boutique import Product, ProductListResponse
 from app.models.reservation import ReservationRequest, ReservationResponse
 from app.services import sheets_service
 from app.services.sheets_write_service import append_row
-from app.services.email_service import send_email, _build_reservation_email_html
+from app.services.email_service import send_email
+from app.services.email_templates import build_reservation_email
 from app.config import get_settings
 from app.logging_config import get_logger
 
@@ -82,8 +82,8 @@ async def create_reservation(data: ReservationRequest):
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     # --- 1. Write to Google Sheet ---
-    sheet_id = os.getenv("SHEET_ID_RESERVATIONS", settings.sheet_id_boutique)
-    sheet_name = os.getenv("SHEET_NAME_RESERVATIONS", "Reservations")
+    sheet_id = settings.sheet_id_reservations or settings.sheet_id_boutique
+    sheet_name = settings.sheet_name_reservations
     row = [
         timestamp,
         data.name,
@@ -98,14 +98,26 @@ async def create_reservation(data: ReservationRequest):
     ]
     written = await append_row(sheet_id, sheet_name, row)
     if not written:
-        logger.warning("Could not write reservation to Google Sheet")
+        logger.error("Could not write reservation to Google Sheet")
+        raise HTTPException(
+            status_code=503,
+            detail="La réservation n’a pas pu être enregistrée. Veuillez réessayer.",
+        )
 
     # --- 2. Send email notification ---
-    church_email = os.getenv("CHURCH_NOTIFICATION_EMAIL", "larencontrefr@gmail.com")
+    recipients = await sheets_service.get_notification_recipients()
     payload = data.model_dump()
     subject = f"🛍️ Réservation boutique : {data.product.name} — {data.name} {data.firstname}"
-    html = _build_reservation_email_html(payload)
-    await send_email(to=church_email, subject=subject, html_body=html)
+    html = build_reservation_email(payload)
+    email_results = [
+        await send_email(to=recipient, subject=subject, html_body=html)
+        for recipient in recipients
+    ]
+    if not all(email_results):
+        logger.warning("One or more reservation notification emails could not be sent", extra={
+            "recipient_count": len(recipients),
+            "failed_count": email_results.count(False),
+        })
 
     logger.info(f"Reservation for {data.product.name} by {data.name} {data.firstname}")
     return ReservationResponse()

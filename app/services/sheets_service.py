@@ -134,3 +134,26 @@ async def get_services(use_cache: bool = True) -> list[dict[str, Any]]:
 async def get_vision(use_cache: bool = True) -> list[dict[str, Any]]:
     """Fetch vision content from the vision sheet."""
     return await fetch_sheet_data(settings.sheet_id_vision, use_cache=use_cache)
+
+
+async def get_site_content(use_cache: bool = True) -> list[dict[str, Any]]:
+    """Fetch site content from the site_content sheet."""
+    return await fetch_sheet_data(settings.sheet_id_site_content, use_cache=use_cache)
+
+
+async def get_contact_notification_emails(use_cache: bool = True) -> list[dict[str, Any]]:
+    """Fetch contact notification recipients from their dedicated sheet."""
+    return await fetch_sheet_data(settings.sheet_id_email_contact, use_cache=use_cache)
+
+
+async def get_notification_recipients(use_cache: bool = True) -> list[str]:
+    """Return unique notification emails, with the configured fallback."""
+    rows = await get_contact_notification_emails(use_cache=use_cache)
+    recipients = list(dict.fromkeys(
+        str(item.get("email", "")).strip().lower()
+        for item in rows
+        if "@" in str(item.get("email", ""))
+    ))
+    if not recipients and settings.church_notification_email:
+        recipients = [settings.church_notification_email.strip().lower()]
+    return recipients

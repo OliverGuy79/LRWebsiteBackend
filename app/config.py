@@ -15,11 +15,28 @@ class Settings(BaseSettings):
     sheet_id_boutique: str = ""
     sheet_id_church_info: str = ""
     sheet_id_contact: str = ""
+    sheet_name_contact: str = "contact"
     sheet_id_events: str = ""
     sheet_id_home_groups: str = ""
     sheet_id_pastoral_team: str = ""
     sheet_id_services: str = ""
     sheet_id_vision: str = ""
+    sheet_id_site_content: str = ""
+    sheet_id_email_contact: str = ""
+
+    # Écriture Google Sheets et notifications
+    google_service_account_json: str = ""
+    sheet_id_reservations: str = ""
+    sheet_name_reservations: str = "Reservations"
+    church_notification_email: str = "larencontrefr@gmail.com"
+    smtp_email: str = ""
+    smtp_password: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_sender_email: str = ""
+    gmail_email: str = ""
+    gmail_app_password: str = ""
     
     # Cache settings
     cache_enabled: bool = True

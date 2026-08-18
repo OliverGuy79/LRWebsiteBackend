@@ -72,7 +72,7 @@ def generate_recurring_instances(event: dict, months_ahead: int = RECURRING_MONT
             # Find the next occurrence
             days_ahead = (today - current_date).days
             weeks_ahead = (days_ahead // 7) + (1 if days_ahead % 7 > 0 else 0)
-            current_date = current_date + timedelta(weeks=weeks_ahead * 7)
+            current_date = current_date + timedelta(weeks=weeks_ahead)
 
         while current_date <= generation_end:
             instance = create_event_instance(event, current_date)
@@ -260,12 +260,26 @@ async def get_event(
 ):
     """Get a single event by ID or slug, including full HTML content from Google Doc."""
     data = await sheets_service.get_events()
+    data = expand_recurring_events(data)
 
-    # Find event by ID or slug
-    event_data = next((e for e in data if e.get("id") == event_id or e.get("slug") == event_id), None)
+    # Google Sheets peut contenir des espaces invisibles en fin de cellule.
+    # Normaliser l'identifiant demandé et les valeurs avant la comparaison.
+    normalized_event_id = event_id.strip()
+    event_data = next((
+        e for e in data
+        if str(e.get("id", "")).strip() == normalized_event_id
+        or str(e.get("slug", "")).strip() == normalized_event_id
+    ), None)
 
     if not event_data:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    event_data = {
+        **event_data,
+        "id": str(event_data.get("id", "")).strip(),
+        "slug": str(event_data.get("slug", "")).strip() or None,
+        "title": str(event_data.get("title", "")).strip(),
+    }
 
     # Check status - only allow published unless preview mode
     status = event_data.get("status", "").lower()
@@ -273,7 +287,13 @@ async def get_event(
         raise HTTPException(status_code=404, detail="Event not found")
 
     # Fetch content from Google Doc if link is provided
-    doc_url = event_data.get("link")
+    # `link` remains the canonical detailed-content document. Accept a Google
+    # Docs URL in `media` as a backwards-compatible fallback, without treating
+    # every media asset as article content.
+    media_url = event_data.get("media") or ""
+    doc_url = event_data.get("link") or (
+        media_url if "docs.google.com/document" in media_url else None
+    )
     content_html = await docs_service.get_article_content(doc_url)
 
     return EventFull(

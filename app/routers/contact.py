@@ -1,13 +1,14 @@
 """Contact API endpoints — saves to Google Sheet and sends email notification."""
 
-import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.models.contact import ContactSubmission, ContactResponse
 from app.services.sheets_write_service import append_row
-from app.services.email_service import send_email, _build_contact_email_html
+from app.services.email_service import send_email
+from app.services.email_templates import build_contact_email
+from app.services import sheets_service
 from app.config import get_settings
 from app.logging_config import get_logger
 
@@ -25,39 +26,71 @@ _SUBJECT_LABELS = {
     "other": "Autre",
 }
 
+_SUBJECT_CATEGORIES = {
+    "general": "general",
+    "home-group": "home_group",
+    "baptism": "baptism",
+    "prayer": "prayer_request",
+    "other": "other",
+}
+
 
 @router.post("", response_model=ContactResponse, status_code=201)
-async def submit_contact(data: ContactSubmission):
+async def submit_contact(data: ContactSubmission, request: Request):
     """
     Handle a contact form submission:
       1. Save to the Google Sheet (SHEET_ID_CONTACT)
       2. Send notification email to the church email
     """
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    forwarded_for = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    ip_address = forwarded_for or (request.client.host if request.client else "")
+    subject_label = _SUBJECT_LABELS.get(data.subject, data.subject)
 
     # --- 1. Write to Google Sheet ---
     sheet_id = settings.sheet_id_contact
     row = [
-        timestamp,
-        data.name,
+        "=ROW()-1",
+        data.first_name,
+        data.last_name,
         data.email,
-        _SUBJECT_LABELS.get(data.subject, data.subject),
+        data.phone,
+        subject_label,
         data.message,
+        _SUBJECT_CATEGORIES.get(data.subject, data.subject),
+        "pending",
+        "",
+        "",
+        "",
+        ip_address,
+        created_at,
     ]
-    written = await append_row(sheet_id, "Sheet1", row)
+    written = await append_row(sheet_id, settings.sheet_name_contact, row)
     if not written:
-        logger.warning("Could not write contact to Google Sheet (submission still saved)")
+        logger.error("Could not write contact to Google Sheet")
+        raise HTTPException(
+            status_code=503,
+            detail="Le message n’a pas pu être enregistré. Veuillez réessayer.",
+        )
 
     # --- 2. Send email notification ---
-    church_email = os.getenv("CHURCH_NOTIFICATION_EMAIL", "larencontrefr@gmail.com")
-    subject = f"📩 Nouveau contact : {_SUBJECT_LABELS.get(data.subject, data.subject)} — {data.name}"
-    html = _build_contact_email_html(data.model_dump())
+    recipients = await sheets_service.get_notification_recipients()
 
-    # Attempt email in background — don't block the response
-    await send_email(to=church_email, subject=subject, html_body=html, reply_to=data.email)
+    full_name = f"{data.first_name} {data.last_name}".strip()
+    subject = f"📩 Nouveau contact : {subject_label} — {full_name}"
+    html = build_contact_email(data.model_dump(), subject_label)
 
-    logger.info(f"Contact submission from {data.name} ({data.email})", extra={"subject": data.subject})
+    # L'enregistrement Sheets reste la source de vérité. Une panne SMTP ne doit
+    # pas inciter l'utilisateur à renvoyer le formulaire et créer un doublon.
+    email_results = [
+        await send_email(to=recipient, subject=subject, html_body=html, reply_to=data.email)
+        for recipient in recipients
+    ]
+    if not all(email_results):
+        logger.warning("One or more contact notification emails could not be sent", extra={
+            "recipient_count": len(recipients),
+            "failed_count": email_results.count(False),
+        })
+
+    logger.info(f"Contact submission from {full_name} ({data.email})", extra={"subject": data.subject})
     return ContactResponse()
-
-
-import os

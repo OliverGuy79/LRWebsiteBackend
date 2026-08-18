@@ -10,35 +10,28 @@ from app.logging_config import get_logger
 settings = get_settings()
 logger = get_logger(__name__)
 
-# Gmail SMTP configuration
-_SMTP_HOST = "smtp.gmail.com"
-_SMTP_PORT = 587
-
-
 def _get_smtp_credentials():
-    """Retrieve Gmail SMTP credentials from environment."""
-    email = os.getenv("SMTP_EMAIL") or os.getenv("GMAIL_EMAIL")
-    password = os.getenv("SMTP_PASSWORD") or os.getenv("GMAIL_APP_PASSWORD")
-    return email, password
-
-
-import os
+    """Retrieve generic SMTP credentials from application settings."""
+    username = settings.smtp_username or settings.smtp_email or settings.gmail_email
+    password = settings.smtp_password or settings.gmail_app_password
+    sender = settings.smtp_sender_email or settings.smtp_email or settings.gmail_email or username
+    return settings.smtp_host, settings.smtp_port, username, password, sender
 
 
 async def send_email(to: str, subject: str, html_body: str, reply_to: str | None = None) -> bool:
     """
     Send an HTML email via Gmail SMTP.
 
-    Requires SMTP_EMAIL and SMTP_PASSWORD (Gmail app password) env vars.
+    Supports Brevo, Gmail, or any STARTTLS-compatible SMTP relay.
     """
-    smtp_email, smtp_password = _get_smtp_credentials()
-    if not smtp_email or not smtp_password:
-        logger.warning("SMTP_EMAIL / SMTP_PASSWORD not set — email not sent")
+    smtp_host, smtp_port, smtp_username, smtp_password, sender_email = _get_smtp_credentials()
+    if not smtp_username or not smtp_password or not sender_email:
+        logger.warning("SMTP credentials or sender not set — email not sent")
         return False
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = smtp_email
+    msg["From"] = sender_email
     msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
@@ -48,10 +41,10 @@ async def send_email(to: str, subject: str, html_body: str, reply_to: str | None
     try:
         # Use synchronous SMTP in a thread-safe way (FastAPI runs async but
         # smtplib is blocking; for low volume this is fine)
-        with smtplib.SMTP(_SMTP_HOST, _SMTP_PORT) as server:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
             server.starttls()
-            server.login(smtp_email, smtp_password)
-            server.sendmail(smtp_email, to, msg.as_string())
+            server.login(smtp_username, smtp_password)
+            server.sendmail(sender_email, to, msg.as_string())
 
         logger.info(f"Email sent to {to}", extra={"subject": subject})
         return True
@@ -68,7 +61,11 @@ def _build_contact_email_html(data: dict) -> str:
         <table style="border-collapse: collapse; width: 100%; margin-top: 16px;">
             <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; width: 120px;">Nom</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{data.get('name', '')}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{data.get('first_name', '')} {data.get('last_name', '')}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{data.get('phone', '')}</td>
             </tr>
             <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold;">Email</td>
