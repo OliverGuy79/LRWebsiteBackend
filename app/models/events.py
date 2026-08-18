@@ -16,6 +16,7 @@ class Event(BaseModel):
     start_time: str | None = None
     end_time: str | None = None
     image: str | None = None
+    media: str | None = None
     category: str | None = None
     registration_required: str | None = None
     registration_link: str | None = None

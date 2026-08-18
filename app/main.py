@@ -15,11 +15,13 @@ from app.routers import (
     articles,
     boutique,
     church_info,
+    contact,
     events,
     home_groups,
     images,
     pastoral_team,
     services,
+    site_content,
     vision,
 )
 
@@ -109,8 +111,10 @@ app.include_router(church_info.router, prefix="/api/church-info", tags=["Church 
 app.include_router(events.router, prefix="/api/events", tags=["Events"])
 app.include_router(home_groups.router, prefix="/api/home-groups", tags=["Home Groups"])
 app.include_router(images.router, prefix="/api/images", tags=["Images"])
+app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
 app.include_router(pastoral_team.router, prefix="/api/pastoral-team", tags=["Pastoral Team"])
 app.include_router(services.router, prefix="/api/services", tags=["Services"])
+app.include_router(site_content.router, prefix="/api/site-content", tags=["Site Content"])
 app.include_router(vision.router, prefix="/api/vision", tags=["Vision"])
 
 
